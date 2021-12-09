@@ -1,6 +1,5 @@
 git add .
-message="Added PyTorch Practice Examples"
-# git commit -m "$1"
+message=""
 git commit -m "$message"
 git push
 
