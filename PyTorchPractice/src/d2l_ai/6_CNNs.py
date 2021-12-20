@@ -6,6 +6,8 @@ from torch import nn
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 from torch.nn.common_types import _size_6_t
+import torchvision
+from torchvision import datasets, transforms
 
 
 def corr2d(X: torch.Tensor, K: torch.Tensor) -> torch.Tensor:
@@ -640,8 +642,6 @@ for layer in net:
 # Note: Convolutional layers are typically arranged sl that they gradually decrease the spatial resolution of the
 # representations, while increasing the number of channels.
 
-import torchvision
-from torchvision import datasets, transforms
 
 # Training
 # We will train LeNet on Fashion MNIST dataset
@@ -650,11 +650,10 @@ from torchvision import datasets, transforms
 # https://medium.com/@aaysbt/fashion-mnist-data-training-using-pytorch-7f6ad71e96f4
 # https://www.kaggle.com/pankajj/fashion-mnist-with-pytorch-93-accuracy
 batch_size = 256
-# fashion_mnist_dataset = torchvision.datasets.FashionMNIST("FashionMNIST/processed/training.pt")
-# train_iter, test_iter =
 transformation = transforms.Compose([transforms.ToTensor()])
+data_root_path = "./data"
 train_set = torchvision.datasets.FashionMNIST(
-    "./data",
+    data_root_path,
     download=True,
     train=True,
     transform=transformation
@@ -669,7 +668,7 @@ print(train_set)
 #     ToTensor()
 # )
 test_set = torchvision.datasets.FashionMNIST(
-    "./data",
+    data_root_path,
     download=True,
     train=False,
     transform=transformation
@@ -693,6 +692,10 @@ print(train_loader)
 test_loader = torch.utils.data.dataloader.DataLoader(test_set, batch_size=batch_size)
 print(test_loader)
 # <torch.utils.data.dataloader.DataLoader object at 0x10c881a60>
+
+# Delete data folder
+import shutil
+shutil.rmtree(data_root_path)
 
 
 # Accumulator class borrowed from d2l library
@@ -763,16 +766,11 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
     net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
     loss = torch.nn.CrossEntropyLoss()
-    # animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
-    #                         legend=['train loss', 'train acc', 'test acc'])
-    # timer, num_batches = d2l.Timer(), len(train_iter)
-    num_batches = len(train_iter)
     for epoch in range(num_epochs):
         # Sum of training loss, sum of training accuracy, no. of examples
         metric = Accumulator(3)
         net.train()
         for i, (X, y) in enumerate(train_iter):
-            # timer.start()
             optimizer.zero_grad()
             X, y = X.to(device), y.to(device)
             y_hat = net(X)
@@ -781,18 +779,11 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
             optimizer.step()
             with torch.no_grad():
                 metric.add(l * X.shape[0], accuracy(y_hat, y), X.shape[0])
-            # timer.stop()
             train_l = metric[0] / metric[2]
             train_acc = metric[1] / metric[2]
-            # if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
-                # animator.add(epoch + (i + 1) / num_batches,
-                #              (train_l, train_acc, None))
         test_acc = evaluate_accuracy_gpu(net, test_iter)
-        # animator.add(epoch + 1, (None, None, test_acc))
     print(f'loss {train_l:.3f}, train acc {train_acc:.3f}, '
           f'test acc {test_acc:.3f}')
-    # print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec '
-    #       f'on {str(device)}')
 
 
 # Now train LeNet model on Fashion-MNIST dataset
