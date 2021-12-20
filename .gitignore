@@ -12,6 +12,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Other
+*/PyTorchPractice/src/d2l_ai/data
+
 # C extensions
 *.so
 
